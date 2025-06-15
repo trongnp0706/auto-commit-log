@@ -2,25 +2,44 @@ name: Auto Commit
 
 on:
   schedule:
-    - cron: '*/30 * * * *'  # Mỗi 30 phút
+    - cron: '*/30 * * * *'  # Every 30 minutes
   workflow_dispatch:      # Allows manual triggering
+
+permissions:
+  contents: write
 
 jobs:
   auto-commit:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update log.txt
         run: |
-          echo "Auto commit at $(date)" >> log.txt
+          echo "=== Auto Commit Log Entry ===" >> log.txt
+          echo "Timestamp: $(date)" >> log.txt
+          echo "Commit ID: ${{ github.sha }}" >> log.txt
+          echo "Repository: ${{ github.repository }}" >> log.txt
+          echo "Branch: ${{ github.ref_name }}" >> log.txt
+          echo "Last Commit Message: $(git log -1 --pretty=%B)" >> log.txt
+          echo "----------------------------------------" >> log.txt
 
       - name: Commit and Push
+        id: commit
         run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add log.txt
-          git commit -m "Auto commit at $(date)" || echo "Nothing to commit"
+          git commit -m "Auto commit at $(date)" || echo "No changes to commit"
           git push
+          echo "::notice::Successfully committed and pushed changes to log.txt"
+
+      - name: Show Success Message
+        if: success()
+        run: |
+          echo "✅ Auto commit completed successfully!"
+          echo "📝 Log entry added to log.txt"
+          echo "🕒 Next run in 30 minutes"
