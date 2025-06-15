@@ -2,7 +2,8 @@ name: Auto Commit
 
 on:
   schedule:
-    - cron: '*/30 * * * *'  # Every 30 minutes
+    - cron: '0 8 * * *'  # 8:00 AM Vietnam time (UTC+7)
+    - cron: '0 20 * * *' # 8:00 PM Vietnam time (UTC+7)
   workflow_dispatch:      # Allows manual triggering
 
 permissions:
@@ -19,8 +20,14 @@ jobs:
 
       - name: Update log.txt
         run: |
+          # Set timezone to Vietnam time (UTC+7)
+          export TZ=Asia/Ho_Chi_Minh
+          export LANG=en_US.UTF-8
+          export LC_ALL=en_US.UTF-8
+          
+          # Create or append to log.txt with proper encoding
           echo "=== Auto Commit Log Entry ===" >> log.txt
-          echo "Timestamp: $(date)" >> log.txt
+          echo "Timestamp: $(date '+%Y-%m-%d %H:%M:%S %Z')" >> log.txt
           echo "Commit ID: ${{ github.sha }}" >> log.txt
           echo "Repository: ${{ github.repository }}" >> log.txt
           echo "Branch: ${{ github.ref_name }}" >> log.txt
@@ -33,7 +40,7 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add log.txt
-          git commit -m "Auto commit at $(date)" || echo "No changes to commit"
+          git commit -m "Auto commit at $(date '+%Y-%m-%d %H:%M:%S %Z')" || echo "No changes to commit"
           git push
           echo "::notice::Successfully committed and pushed changes to log.txt"
 
@@ -42,4 +49,4 @@ jobs:
         run: |
           echo "✅ Auto commit completed successfully!"
           echo "📝 Log entry added to log.txt"
-          echo "🕒 Next run in 30 minutes"
+          echo "🕒 Next run at 8:00 AM or 8:00 PM Vietnam time"
