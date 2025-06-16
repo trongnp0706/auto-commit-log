@@ -18,35 +18,12 @@ jobs:
 
       - name: Update log.txt
         run: |
-          # Set timezone and encoding
-          export TZ=Asia/Ho_Chi_Minh
-          export LANG=en_US.UTF-8
-          export LC_ALL=en_US.UTF-8
-          
-          # Get commit message
-          COMMIT_MESSAGE=$(git log -1 --pretty=%B)
-          
-          # Create log entry with proper encoding
-          {
-            echo -e "=== Auto Commit Log Entry ==="
-            echo -e "Timestamp: $(date '+%Y-%m-%d %H:%M:%S %Z')"
-            echo -e "Commit ID: ${GITHUB_SHA}"
-            echo -e "Repository: ${GITHUB_REPOSITORY}"
-            echo -e "Branch: ${GITHUB_REF_NAME}"
-            echo -e "Last Commit Message: ${COMMIT_MESSAGE}"
-            echo -e "----------------------------------------\n"
-          } | iconv -f UTF-8 -t UTF-8 >> log.txt
+          echo "Auto commit at $(date '+%Y-%m-%d %H:%M:%S')" >> log.txt
 
       - name: Commit and Push
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add log.txt
-          git commit -m "Auto commit at $(date '+%Y-%m-%d %H:%M:%S %Z')" || echo "No changes to commit"
+          git commit -m "Auto commit at $(date '+%Y-%m-%d %H:%M:%S')" || echo "No changes to commit"
           git push
-
-      - name: Show Success Message
-        if: success()
-        run: |
-          echo "✅ Auto commit completed successfully!"
-          echo "📝 Log entry added to log.txt"
