@@ -18,22 +18,6 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Debug - Check Initial State
-        run: |
-          echo "=== Debug Information ==="
-          echo "Current directory: $(pwd)"
-          echo "Files in directory:"
-          ls -la
-          echo "Current UTC time: $(date -u)"
-          echo "Current Vietnam time: $(TZ=Asia/Ho_Chi_Minh date)"
-          if [ -f log.txt ]; then
-            echo "log.txt exists"
-            echo "Current content of log.txt:"
-            cat log.txt
-          else
-            echo "log.txt does not exist yet"
-          fi
-
       - name: Update log.txt
         run: |
           # Set timezone to Vietnam time (UTC+7)
@@ -41,51 +25,30 @@ jobs:
           export LANG=en_US.UTF-8
           export LC_ALL=en_US.UTF-8
           
-          # Get current time in Vietnam timezone
-          CURRENT_TIME=$(date '+%Y-%m-%d %H:%M:%S %Z')
-          
-          # Create log entry using printf for better encoding control
-          printf "=== Auto Commit Log Entry ===\n" > new_log.txt
-          printf "Timestamp: %s\n" "$CURRENT_TIME" >> new_log.txt
-          printf "Commit ID: %s\n" "${{ github.sha }}" >> new_log.txt
-          printf "Repository: %s\n" "${{ github.repository }}" >> new_log.txt
-          printf "Branch: %s\n" "${{ github.ref_name }}" >> new_log.txt
-          printf "Last Commit Message: %s\n" "$(git log -1 --pretty=%B)" >> new_log.txt
-          printf "----------------------------------------\n" >> new_log.txt
-          
-          # Append to log.txt if it exists, otherwise create it
-          if [ -f log.txt ]; then
-            cat new_log.txt >> log.txt
-          else
-            cat new_log.txt > log.txt
-          fi
-          
-          # Clean up
-          rm new_log.txt
-
-      - name: Debug - Verify Log File
-        run: |
-          echo "=== Verifying log.txt ==="
-          echo "File permissions:"
-          ls -l log.txt
-          echo "File encoding:"
-          file -i log.txt
-          echo "Content of log.txt:"
-          cat log.txt
-          echo "Number of lines:"
-          wc -l log.txt
+          # Create or append to log.txt with proper encoding
+          {
+            printf "=== Auto Commit Log Entry ===\n"
+            printf "Timestamp: %s\n" "$(date '+%Y-%m-%d %H:%M:%S %Z')"
+            printf "Commit ID: %s\n" "${{ github.sha }}"
+            printf "Repository: %s\n" "${{ github.repository }}"
+            printf "Branch: %s\n" "${{ github.ref_name }}"
+            printf "Last Commit Message: %s\n" "$(git log -1 --pretty=%B)"
+            printf "----------------------------------------\n"
+          } >> log.txt
 
       - name: Commit and Push
+        id: commit
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add log.txt
-          git status
-          git commit -m "Auto commit at $(TZ=Asia/Ho_Chi_Minh date '+%Y-%m-%d %H:%M:%S %Z')" || echo "No changes to commit"
+          git commit -m "Auto commit at $(date '+%Y-%m-%d %H:%M:%S %Z')" || echo "No changes to commit"
           git push
+          echo "::notice::Successfully committed and pushed changes to log.txt"
 
       - name: Show Success Message
         if: success()
         run: |
           echo "✅ Auto commit completed successfully!"
+          echo "📝 Log entry added to log.txt"
           echo "🕒 Next run at 8:00 AM or 8:00 PM Vietnam time"
