@@ -25,16 +25,16 @@ jobs:
           export LANG=en_US.UTF-8
           export LC_ALL=en_US.UTF-8
           
-          # Create or append to log.txt with proper encoding
-          {
-            printf "=== Auto Commit Log Entry ===\n"
-            printf "Timestamp: %s\n" "$(date '+%Y-%m-%d %H:%M:%S %Z')"
-            printf "Commit ID: %s\n" "${{ github.sha }}"
-            printf "Repository: %s\n" "${{ github.repository }}"
-            printf "Branch: %s\n" "${{ github.ref_name }}"
-            printf "Last Commit Message: %s\n" "$(git log -1 --pretty=%B)"
-            printf "----------------------------------------\n"
-          } >> log.txt
+          # Create and append to log.txt
+          cat << EOF >> log.txt
+          === Auto Commit Log Entry ===
+          Timestamp: $(date '+%Y-%m-%d %H:%M:%S %Z')
+          Commit ID: ${{ github.sha }}
+          Repository: ${{ github.repository }}
+          Branch: ${{ github.ref_name }}
+          Last Commit Message: $(git log -1 --pretty=%B)
+          ----------------------------------------
+          EOF
 
       - name: Commit and Push
         id: commit
