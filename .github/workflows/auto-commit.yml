@@ -2,9 +2,9 @@ name: Auto Commit
 
 on:
   schedule:
-    - cron: '0 1 * * *'  # 8:00 AM Vietnam time (UTC+7) = 1:00 AM UTC
-    - cron: '0 13 * * *' # 8:00 PM Vietnam time (UTC+7) = 1:00 PM UTC
-  workflow_dispatch:      # Allows manual triggering
+    - cron: '0 1 * * *'  # 8:00 AM Vietnam time (UTC+7)
+    - cron: '0 13 * * *' # 8:00 PM Vietnam time (UTC+7)
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -15,40 +15,35 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update log.txt
         run: |
-          # Set timezone to Vietnam time (UTC+7)
           export TZ=Asia/Ho_Chi_Minh
           export LANG=en_US.UTF-8
           export LC_ALL=en_US.UTF-8
-          
-          # Create and append to log.txt
-          cat << EOF >> log.txt
-          === Auto Commit Log Entry ===
-          Timestamp: $(date '+%Y-%m-%d %H:%M:%S %Z')
-          Commit ID: ${{ github.sha }}
-          Repository: ${{ github.repository }}
-          Branch: ${{ github.ref_name }}
-          Last Commit Message: $(git log -1 --pretty=%B)
-          ----------------------------------------
-          EOF
+
+          COMMIT_MESSAGE=$(git log -1 --pretty=%B)
+
+          {
+            printf "=== Auto Commit Log Entry ===\n"
+            printf "Timestamp: %s\n" "$(date '+%Y-%m-%d %H:%M:%S %Z')"
+            printf "Commit ID: %s\n" "${GITHUB_SHA}"
+            printf "Repository: %s\n" "${GITHUB_REPOSITORY}"
+            printf "Branch: %s\n" "${GITHUB_REF_NAME}"
+            printf "Last Commit Message: %s\n" "${COMMIT_MESSAGE}"
+            printf "----------------------------------------\n\n"
+          } >> log.txt
 
       - name: Commit and Push
-        id: commit
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add log.txt
           git commit -m "Auto commit at $(date '+%Y-%m-%d %H:%M:%S %Z')" || echo "No changes to commit"
           git push
-          echo "::notice::Successfully committed and pushed changes to log.txt"
 
       - name: Show Success Message
         if: success()
         run: |
           echo "✅ Auto commit completed successfully!"
           echo "📝 Log entry added to log.txt"
-          echo "🕒 Next run at 8:00 AM or 8:00 PM Vietnam time"
