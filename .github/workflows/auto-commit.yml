@@ -2,8 +2,8 @@ name: Auto Commit
 
 on:
   schedule:
-    - cron: '0 1 * * *'  # 8:00 AM Vietnam time (UTC+7)
-    - cron: '0 13 * * *' # 8:00 PM Vietnam time (UTC+7)
+    - cron: '0 0 * * *'  # 7:00 AM Vietnam time (UTC+7)
+    - cron: '0 12 * * *' # 7:00 PM Vietnam time (UTC+7)
   workflow_dispatch:
 
 permissions:
@@ -18,7 +18,12 @@ jobs:
 
       - name: Update log.txt
         run: |
-          echo "Auto commit at $(date '+%Y-%m-%d %H:%M:%S')" >> log.txt
+          # Set timezone to Vietnam time
+          export TZ=Asia/Ho_Chi_Minh
+          
+          # Create log entry
+          TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+          printf "%s\n" "[$TIMESTAMP] Auto commit" > log.txt
 
       - name: Commit and Push
         run: |
