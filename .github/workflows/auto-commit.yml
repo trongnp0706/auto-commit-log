@@ -38,17 +38,30 @@ jobs:
         run: |
           # Set timezone to Vietnam time (UTC+7)
           export TZ=Asia/Ho_Chi_Minh
+          export LANG=en_US.UTF-8
+          export LC_ALL=en_US.UTF-8
           
-          # Create or append to log.txt
-          {
-            echo "=== Auto Commit Log Entry ==="
-            echo "Timestamp: $(date '+%Y-%m-%d %H:%M:%S %Z')"
-            echo "Commit ID: ${{ github.sha }}"
-            echo "Repository: ${{ github.repository }}"
-            echo "Branch: ${{ github.ref_name }}"
-            echo "Last Commit Message: $(git log -1 --pretty=%B)"
-            echo "----------------------------------------"
-          } >> log.txt
+          # Get current time in Vietnam timezone
+          CURRENT_TIME=$(date '+%Y-%m-%d %H:%M:%S %Z')
+          
+          # Create log entry using printf for better encoding control
+          printf "=== Auto Commit Log Entry ===\n" > new_log.txt
+          printf "Timestamp: %s\n" "$CURRENT_TIME" >> new_log.txt
+          printf "Commit ID: %s\n" "${{ github.sha }}" >> new_log.txt
+          printf "Repository: %s\n" "${{ github.repository }}" >> new_log.txt
+          printf "Branch: %s\n" "${{ github.ref_name }}" >> new_log.txt
+          printf "Last Commit Message: %s\n" "$(git log -1 --pretty=%B)" >> new_log.txt
+          printf "----------------------------------------\n" >> new_log.txt
+          
+          # Append to log.txt if it exists, otherwise create it
+          if [ -f log.txt ]; then
+            cat new_log.txt >> log.txt
+          else
+            cat new_log.txt > log.txt
+          fi
+          
+          # Clean up
+          rm new_log.txt
 
       - name: Debug - Verify Log File
         run: |
@@ -56,7 +69,7 @@ jobs:
           echo "File permissions:"
           ls -l log.txt
           echo "File encoding:"
-          file log.txt
+          file -i log.txt
           echo "Content of log.txt:"
           cat log.txt
           echo "Number of lines:"
