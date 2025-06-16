@@ -2,9 +2,9 @@ name: Auto Commit
 
 on:
   schedule:
-    - cron: '0 1 * * *'  # 8:00 AM Vietnam time (UTC+7)
-    - cron: '0 13 * * *' # 8:00 PM Vietnam time (UTC+7)
-  workflow_dispatch:
+    - cron: '0 1 * * *'   # 8:00 AM Vietnam time
+    - cron: '0 13 * * *'  # 8:00 PM Vietnam time
+  workflow_dispatch:      # Manual trigger
 
 permissions:
   contents: write
@@ -12,42 +12,48 @@ permissions:
 jobs:
   auto-commit:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Update log.txt safely
+      - name: Update log.txt
         run: |
+          # Set timezone and encoding
           export TZ=Asia/Ho_Chi_Minh
           export LANG=en_US.UTF-8
           export LC_ALL=en_US.UTF-8
 
+          # Get last commit message
           COMMIT_MESSAGE=$(git log -1 --pretty=%B)
 
+          # Create log entry with printf (no BOM)
           {
-            printf "%s\n" "=== Auto Commit Log Entry ==="
+            printf "=== Auto Commit Log Entry ===\n"
             printf "Timestamp: %s\n" "$(date '+%Y-%m-%d %H:%M:%S %Z')"
-            printf "Commit ID: %s\n" -- "${GITHUB_SHA}"
-            printf "Repository: %s\n" -- "${GITHUB_REPOSITORY}"
-            printf "Branch: %s\n" -- "${GITHUB_REF_NAME}"
-            printf "Last Commit Message: %s\n" -- "${COMMIT_MESSAGE}"
-            printf "%s\n" "----------------------------------------"
-            printf "\n"
+            printf "Commit ID: %s\n" "${GITHUB_SHA}"
+            printf "Repository: %s\n" "${GITHUB_REPOSITORY}"
+            printf "Branch: %s\n" "${GITHUB_REF_NAME}"
+            printf "Last Commit Message: %s\n" "${COMMIT_MESSAGE}"
+            printf "----------------------------------------\n\n"
           } >> log.txt
 
-      - name: Commit and Push changes
+          # Convert to UTF-8 without BOM (if needed)
+          iconv -f UTF-8 -t UTF-8 log.txt -o log.txt
+
+      - name: Commit and Push
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add log.txt
-          git commit -m "Auto commit at $(date '+%Y-%m-%d %H:%M:%S %Z')" || echo "⚠️ No changes to commit"
+          git commit -m "Auto commit at $(date '+%Y-%m-%d %H:%M:%S %Z')" || echo "No changes to commit"
           git push
 
       - name: Show Success Message
         if: success()
         run: |
           echo "✅ Auto commit completed successfully!"
-          echo "📄 log.txt was updated and pushed."
-          echo "🕒 Next run: 8:00 AM & 8:00 PM Vietnam time (UTC+7)"
+          echo "📝 Log entry added to log.txt"
+          echo "🕒 Next run at 8:00 AM or 8:00 PM Vietnam time"
