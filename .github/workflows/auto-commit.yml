@@ -15,8 +15,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Update log.txt
+      - name: Update log.txt safely
         run: |
           export TZ=Asia/Ho_Chi_Minh
           export LANG=en_US.UTF-8
@@ -25,25 +27,27 @@ jobs:
           COMMIT_MESSAGE=$(git log -1 --pretty=%B)
 
           {
-            printf "=== Auto Commit Log Entry ===\n"
+            printf "%s\n" "=== Auto Commit Log Entry ==="
             printf "Timestamp: %s\n" "$(date '+%Y-%m-%d %H:%M:%S %Z')"
-            printf "Commit ID: %s\n" "${GITHUB_SHA}"
-            printf "Repository: %s\n" "${GITHUB_REPOSITORY}"
-            printf "Branch: %s\n" "${GITHUB_REF_NAME}"
-            printf "Last Commit Message: %s\n" "${COMMIT_MESSAGE}"
-            printf "----------------------------------------\n\n"
+            printf "Commit ID: %s\n" -- "${GITHUB_SHA}"
+            printf "Repository: %s\n" -- "${GITHUB_REPOSITORY}"
+            printf "Branch: %s\n" -- "${GITHUB_REF_NAME}"
+            printf "Last Commit Message: %s\n" -- "${COMMIT_MESSAGE}"
+            printf "%s\n" "----------------------------------------"
+            printf "\n"
           } >> log.txt
 
-      - name: Commit and Push
+      - name: Commit and Push changes
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add log.txt
-          git commit -m "Auto commit at $(date '+%Y-%m-%d %H:%M:%S %Z')" || echo "No changes to commit"
+          git commit -m "Auto commit at $(date '+%Y-%m-%d %H:%M:%S %Z')" || echo "⚠️ No changes to commit"
           git push
 
       - name: Show Success Message
         if: success()
         run: |
           echo "✅ Auto commit completed successfully!"
-          echo "📝 Log entry added to log.txt"
+          echo "📄 log.txt was updated and pushed."
+          echo "🕒 Next run: 8:00 AM & 8:00 PM Vietnam time (UTC+7)"
