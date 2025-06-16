@@ -34,14 +34,26 @@ jobs:
           export LANG=en_US.UTF-8
           export LC_ALL=en_US.UTF-8
           
-          # Create or append to log.txt with proper encoding
-          echo "=== Auto Commit Log Entry ===" >> log.txt
-          echo "Timestamp: $(date '+%Y-%m-%d %H:%M:%S %Z')" >> log.txt
-          echo "Commit ID: ${{ github.sha }}" >> log.txt
-          echo "Repository: ${{ github.repository }}" >> log.txt
-          echo "Branch: ${{ github.ref_name }}" >> log.txt
-          echo "Last Commit Message: $(git log -1 --pretty=%B)" >> log.txt
-          echo "----------------------------------------" >> log.txt
+          # Create log entry with proper UTF-8 encoding
+          {
+            echo "=== Auto Commit Log Entry ==="
+            echo "Timestamp: $(date '+%Y-%m-%d %H:%M:%S %Z')"
+            echo "Commit ID: ${{ github.sha }}"
+            echo "Repository: ${{ github.repository }}"
+            echo "Branch: ${{ github.ref_name }}"
+            echo "Last Commit Message: $(git log -1 --pretty=%B)"
+            echo "----------------------------------------"
+          } > new_log_entry.txt
+
+          # Append new entry to log.txt
+          if [ -f log.txt ]; then
+            cat new_log_entry.txt >> log.txt
+          else
+            cat new_log_entry.txt > log.txt
+          fi
+
+          # Clean up
+          rm new_log_entry.txt
 
       - name: Commit and Push
         id: commit
