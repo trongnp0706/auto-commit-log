@@ -2,7 +2,8 @@ name: Auto Commit
 
 on:
   schedule:
-    - cron: '0 */8 * * *' # Chạy mỗi 8 tiếng một lần (0h, 8h, 16h UTC)
+    # Chạy mỗi 8 tiếng vào phút thứ 17 lẻ (giảm tải hàng đợi của GitHub Actions)
+    - cron: '17 */8 * * *'
   workflow_dispatch:
 
 permissions:
@@ -14,20 +15,26 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Update log.txt
         run: |
-          # Set timezone to Vietnam time
           export TZ=Asia/Ho_Chi_Minh
-          
-          # Create log entry
           TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-          printf "%s\n" "[$TIMESTAMP] Auto commit" > log.txt
+          echo "[$TIMESTAMP] Auto commit" >> log.txt
 
       - name: Commit and Push
         run: |
           git config --global user.name "trongnp0706"
           git config --global user.email "phuoctrong1001@gmail.com"
           git add log.txt
-          git commit -m "Auto commit at $(date '+%Y-%m-%d %H:%M:%S')" || echo "No changes to commit"
-          git push
+          
+          # Chỉ commit nếu có thay đổi thực sự
+          if ! git diff-index --quiet HEAD --; then
+            git commit -m "Auto commit at $(TZ=Asia/Ho_Chi_Minh date '+%Y-%m-%d %H:%M:%S')"
+            git pull --rebase origin main
+            git push origin main
+          else
+            echo "No changes to commit."
+          fi
